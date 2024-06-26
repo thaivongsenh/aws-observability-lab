@@ -1,0 +1,61 @@
+version: "3.8"
+networks:
+  monitoring-network:
+
+volumes:
+  pgdb-data: {}
+    
+services:        
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "15692:15692" 
+    networks:
+      - monitoring-network
+
+  postgresql-db:
+    image: postgres:14.1-alpine
+    container_name: postgresql-db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - '5432:5432'
+    networks:
+      - monitoring-network
+    volumes: 
+      - pgdb-data:/var/lib/postgresql/data
+      - ./etc/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
+
+
+  voting-api:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    command: bash -c "dotnet restore && dotnet build && dotnet run  --urls http://+:5000"
+    working_dir: /app
+    volumes:
+      - ./src/VotingData:/app            
+    ports:
+      - "5000:5000"
+    networks:
+      - monitoring-network
+    depends_on:
+      - rabbitmq  
+
+  queue-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    command: bash -c "dotnet restore && dotnet build && dotnet run"
+    working_dir: /app
+    volumes:
+      - ./src/Worker:/app    
+    networks:
+      - monitoring-network     
+    depends_on:
+      - rabbitmq 
+
+   
+  
