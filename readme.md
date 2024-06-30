@@ -80,7 +80,9 @@
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY= ${AWS_SECRET_ACCESS_KEY}
     ports:
-      - "4317:4317"  
+      - "4317:4317"
+    networks:
+      - monitoring-network  
   ```
 - Replace the AWS Credential information in [.env](.env) file, below is example
   ```
